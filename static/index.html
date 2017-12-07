@@ -1,0 +1,250 @@
+<html>
+	<head>
+		<title>简单增删改页面</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+		<script src="node_modules/vue/dist/vue.js"></script>
+		<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+	    <script src="node_modules/jquery/dist/jquery.js"></script>
+	    <script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+	    <style type="text/css">
+	    	.container{font-family: "microsoft yahei";}
+	    	[v-cloak]{
+	            display: none;
+	        }
+	    </style>
+	</head>
+	<body>
+		<div id="page" class="container">
+			<br />
+			<h2 class="text-center">农药英雄</h2>
+			<br />
+			<div class="row">
+				<form class="form-horizontal">
+				  <div class="form-group">
+				    <label for="inputEmail1" class="col-sm-2 control-label">ID：</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" id="inputEmail1" v-model="id">
+				    </div>
+				  </div>
+				  <div class="form-group">
+				    <label for="inputEmail3" class="col-sm-2 control-label">英雄名：</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" id="inputEmail3" v-model="heroname">
+				    </div>
+				  </div>
+				  <div class="form-group">
+				    <label for="inputPassword3" class="col-sm-2 control-label">技能：</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" id="inputPassword3" v-model="skill">
+				    </div>
+				  </div>
+				 
+				  <div class="form-group">
+				    <div class="col-sm-offset-2 col-sm-10">
+				      <button class="btn  btn-primary" @click.stop.prevent="addHero">添加</button>
+				      <button class="btn  btn-danger" @click.stop.prevent="resetModel">重置</button>
+				    </div>
+				  </div>
+				</form>
+				
+			</div>
+			<hr>
+			<hr>
+			<nav aria-label="Page navigation">
+			  <ul class="pagination">
+			    <li>
+			      <a href="javascript:void(0);" aria-label="Previous" @click="prevPage">
+			        <span aria-hidden="true">&laquo;</span>
+			      </a>
+			    </li>
+			    <li @click="getHeroData(n)" v-for="n in pageNum"  :class="{active:n==nowPage}"><a href="javascript:void(0)">{{n}}</a></li>
+			    <li>
+			      <a href="javascript:void(0);" aria-label="Next" @click="nextPage">
+			        <span aria-hidden="true">&raquo;</span>
+			      </a>
+			    </li>
+			  </ul>
+			</nav>
+			<table class="table  table-hover">
+			  <thead>
+		        <tr>
+		          <th class="text-center">ID</th>
+		          <th class="text-center">英雄</th>
+		          <th class="text-center">技能</th>
+		          <th class="text-center">管理</th>
+		        </tr>
+		      </thead>
+			  <tbody>			  	
+			  	<tr class="text-center"  v-for="(item,index) in datalist"  v-cloak >
+			  		<td>{{item.id}}</td>
+			  		<td>{{item.name}}</td>
+			  		<td>{{item.skill}}</td>
+			  		<td><button data-toggle="modal" data-target=".my-modal" class="btn btn-info btn-sm" @click.prevent="editHero(item)">修改</button> <button type="" class="btn btn-warning btn-sm" @click.stop.prevent = "removeHero(item.id)">删除</button></td>
+			  	</tr>
+			  </tbody>
+			</table>
+			 <div class="modal fade my-modal">
+	            <div class="modal-dialog modal-lg" role="document">
+	                <div class="modal-content">
+	                    <div class="modal-header">
+	                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+	                        <h4 class="modal-title" id="myModalLabel">修改资料</h4>
+	                    </div>
+	                    <div class="modal-body">
+					        <form class="form-horizontal">
+							  <div class="form-group">
+							    <label for="inputEmail1" class="col-sm-2 control-label">ID：</label>
+							    <div class="col-sm-10">
+							      <input type="text" class="form-control" id="inputEmail1" v-model="editId" disabled>
+							    </div>
+							  </div>
+							  <div class="form-group">
+							    <label for="inputEmail3" class="col-sm-2 control-label">英雄名：</label>
+							    <div class="col-sm-10">
+							      <input type="text" class="form-control" id="inputEmail3" v-model="editName">
+							    </div>
+							  </div>
+							  <div class="form-group">
+							    <label for="inputPassword3" class="col-sm-2 control-label">技能：</label>
+							    <div class="col-sm-10">
+							      <input type="text" class="form-control" id="inputPassword3" v-model="editSkill">
+							    </div>
+							  </div>
+							</form>
+					    </div>
+	                    <div class="modal-footer">
+	                        <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+	                        <button type="button" data-dismiss="modal" class="btn btn-primary" @click="confirmEdit">确认</button>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+		</div>
+		<script type="text/javascript">
+			new Vue({
+				el:'#page',
+				data:{
+					id:null,
+					heroname:'',
+					skill:'',
+					datalist:[],
+					pageNum:0,
+					nowPage:1,
+					editId:null,
+					editName:'',
+					editSkill:''
+				},
+				mounted(){
+					this.getHeroData(),
+					this.getPageNum()
+				},
+				methods:{
+					addHero(){
+						var _this=this
+						$.get(
+							'/addhero',
+							{
+								id:this.id,
+								name:this.heroname,
+								skill:this.skill
+							},
+							//箭头函数this指向她的父级
+							res=>{
+								this.datalist.unshift({'id':this.id,'name':this.heroname,'skill':this.skill});
+								this.id = null;
+								this.heroname='';
+								this.skill='';
+								this.datalist.pop();
+								this.getPageNum()
+							}
+//							function(res){
+//								_this.datalist.unshift({'id':_this.id,'name':_this.heroname,'skill':_this.skill});
+//								_this.id = null;
+//								_this.heroname='';
+//								_this.skill='';
+//								_this.datalist.pop();
+//								_this.getPageNum()
+//							}
+						)
+					},
+					getHeroData(n=1){
+						this.nowPage=n;
+						$.ajax({
+	                        url:'/getHero',
+	                        data:{page:n}
+	                   }).then(res=>{
+	                   		if(res.err == -1){
+	                   			alert(res.msg)
+	                   		}else{
+	                   			 this.datalist=res;
+	                   		}
+	                       
+	                    })
+					
+					},
+					getPageNum(){
+						$.ajax({
+							url:'/getPageNum'
+							
+						}).then(res=>{
+							this.pageNum = Math.ceil(res.length/5);
+						})
+					},
+					removeHero(id){
+						$.ajax({
+							url:'/removeHero',
+							data:{id:id}
+						}).then(res => {
+							if(res.err == 0){
+								this.datalist.shift();
+								this.getPageNum()
+								this.getHeroData(this.nowPage)
+							}else{
+								alert('数据删除失败')
+							}
+						})
+					},
+					prevPage(){
+						if(this.nowPage > 1){
+							this.nowPage--
+							this.getHeroData(this.nowPage)
+						}
+					},
+					nextPage(){
+						if(this.nowPage < this.pageNum){
+							this.nowPage++
+							this.getHeroData(this.nowPage)
+						}
+					},
+					resetModel(){
+						this.id = null;
+						this.heroname = '';
+						this.skill = '';
+					},
+					editHero(item){						
+						this.editId = item.id;
+						this.editName= item.name;
+						this.editSkill = item.skill;
+						console.log(this.editId)
+					},
+					confirmEdit(){
+						$.ajax({
+							url:'/editHero',
+							data:{
+								id:this.editId,
+								name:this.editName,
+								skill:this.editSkill
+							}
+						}).then(res => {
+							if(res.err == 0){
+								this.getHeroData(this.nowPage)
+							}else{
+								alert('数据修改失败')
+							}
+						})
+					}
+				}
+			})
+		</script>
+	</body>
+</html>
